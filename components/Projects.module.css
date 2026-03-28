@@ -1,0 +1,103 @@
+.projectSection {
+  background-color: color-mix(in srgb, var(--surface-color) 40%, transparent);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  background-color: var(--surface-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.imagePlaceholder {
+  height: 200px;
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+  opacity: 0.8;
+  transition: opacity var(--transition-normal);
+}
+
+.card:hover .imagePlaceholder {
+  opacity: 1;
+}
+
+/* Add varied gradients using nth-child */
+.card:nth-child(2) .imagePlaceholder {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.card:nth-child(3) .imagePlaceholder {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.desc {
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tag {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  color: var(--primary-color);
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.link {
+  font-weight: 600;
+  color: var(--text-main);
+  transition: color var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+}
+
+.link:hover {
+  color: var(--primary-color);
+}
