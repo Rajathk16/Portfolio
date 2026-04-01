@@ -13,13 +13,13 @@ export default function Contact() {
             </p>
             <div className={styles.contactDetails}>
               <div className={styles.detailItem}>
-                <span className={styles.icon}>✉</span> hello@myportfolio.com
+                <span className={styles.icon}>✉</span> rajathkjogi01@gmail.com
               </div>
               <div className={styles.detailItem}>
-                <span className={styles.icon}>📞</span> +1 234 567 890
+                <span className={styles.icon}>📞</span> +91 7975093138
               </div>
               <div className={styles.detailItem}>
-                <span className={styles.icon}>📌</span> San Francisco, CA
+                <span className={styles.icon}>📌</span> Kavoor,Mangalore,Karnataka,India
               </div>
             </div>
           </div>

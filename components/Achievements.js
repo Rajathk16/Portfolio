@@ -1,164 +1,194 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
+import { motion, useAnimationFrame } from "framer-motion";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
-function AchievementTiltCard({ ach, isLeft, delay }) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 20 });
-  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 20 });
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    x.set(mouseX / width - 0.5);
-    y.set(mouseY / height - 0.5);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
-  const borderColor = isLeft ? "border-cyan-500" : "border-purple-500";
-  const glowShadow = isLeft ? "shadow-[0_0_20px_rgba(6,182,212,0.3)]" : "shadow-[0_0_20px_rgba(168,85,247,0.3)]";
-  const textColor = isLeft ? "text-cyan-400" : "text-purple-400";
-  const bgGradient = isLeft ? "from-cyan-500/10" : "from-purple-500/10";
-
+function AchievementNode({ ach, x, y, index, color }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: isLeft ? -50 : 50, scale: 0.9 }}
-      whileInView={{ opacity: 1, x: 0, scale: 1 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ type: "spring", stiffness: 100, damping: 15, delay }}
-      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={`relative perspective-1000 ${isLeft ? "md:pr-8" : "md:pl-8"} w-full`}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.1, type: "spring" }}
+      style={{ left: x, top: y, translate: "-50% -50%" }}
+      className="absolute z-30 group cursor-default"
     >
-      <motion.div
-        initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: delay + 0.3 }}
-        className={`hidden md:block absolute top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r ${isLeft ? 'right-0 from-transparent to-cyan-500 origin-right' : 'left-0 from-purple-500 to-transparent origin-left'} w-8 z-0`}
-      />
-
-      <div
-        className={`bg-zinc-900/80 backdrop-blur-md p-8 md:p-10 rounded-3xl border border-zinc-700 hover:${borderColor} transition-colors ${glowShadow} group relative overflow-hidden`}
-        style={{ transform: "translateZ(30px)" }}
-      >
-        <div className={`absolute inset-0 bg-gradient-to-br ${bgGradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-        <div className="relative z-10" style={{ transform: "translateZ(40px)" }}>
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-2xl md:text-3xl font-black text-white group-hover:drop-shadow-lg transition-all">{ach.title}</h3>
-            <span className={`text-sm md:text-base font-bold ${textColor} bg-zinc-950 px-3 py-1 rounded-full border border-zinc-800 shadow-inner`}>
-              {ach.date}
-            </span>
+      <div className="relative p-6 rounded-[2rem] bg-zinc-900/60 backdrop-blur-3xl border border-white/5 shadow-2xl w-[260px] group-hover:border-purple-500/30 transition-all duration-500">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner group-hover:bg-purple-500/10 group-hover:border-purple-500/50 transition-all">
+            {ach.icon || "🏆"}
           </div>
-
-          <p className="text-zinc-400 text-sm md:text-base leading-relaxed group-hover:text-zinc-300 transition-colors">
-            {ach.desc}
-          </p>
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">{ach.date}</span>
+            <h3 className="text-sm font-black text-white uppercase tracking-tight group-hover:text-purple-400 transition-colors">{ach.title}</h3>
+          </div>
         </div>
+        <p className="text-zinc-500 text-[11px] font-medium leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">{ach.desc}</p>
+        
+        <div className="absolute inset-0 rounded-[2rem] bg-purple-500/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
       </div>
+      
+      {/* Connector Point */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.8)] -z-10" />
     </motion.div>
   );
 }
 
-export default function Achievements() {
-  const achievements = [
-    {
-      title: "IIT Zonals TechFest",
-      desc: "We team participated for the line follower and also got selected for finals .",
-      date: "2024",
-      icon: "🏆"
-    },
-    {
-      title: "Team Challengers",
-      desc: "I became a member on team Challengers and work on Web-Development Team",
-      date: "2025",
-      icon: "🎓"
-    },
-    {
-      title: "Contributor",
-      desc: "Worked with seniors,friends and other people . Contributed to their project.",
-      date: "Ongoing",
-      icon: "⭐"
-    }
-  ];
+function AchievementWeb({ achievements }) {
+  const [rotation, setRotation] = useState(0);
+  const centerX = 500;
+  const centerY = 450;
+  
+  useAnimationFrame((time) => {
+    setRotation(time / 250);
+  });
+
+  const nodes = useMemo(() => {
+    return achievements.map((ach, i) => {
+      const radius = 280 + (i % 2 === 0 ? 40 : -40);
+      const angle = (i / achievements.length) * Math.PI * 2;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+      return { ...ach, x, y };
+    });
+  }, [achievements]);
 
   return (
-    <section id="achievements" className="py-32 bg-zinc-950 relative overflow-hidden pb-48">
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
+    <div className="relative w-[1000px] h-[900px] scale-[0.5] lg:scale-[0.85] origin-center -my-32">
+      <svg width="1000" height="900" className="absolute inset-0 pointer-events-none">
+        {nodes.map((node, i) => {
+          // Circuit-style connections
+          const nextNode = nodes[(i + 1) % nodes.length];
+          return (
+            <g key={i}>
+              <motion.path
+                d={`M ${centerX} ${centerY} L ${node.x} ${node.y}`}
+                stroke="rgba(168, 85, 247, 0.15)"
+                strokeWidth="1.5"
+                fill="none"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 2, delay: i * 0.2 }}
+              />
+              <motion.path
+                d={`M ${node.x} ${node.y} L ${nextNode.x} ${nextNode.y}`}
+                stroke="rgba(168, 85, 247, 0.05)"
+                strokeWidth="1"
+                fill="none"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 3, delay: i * 0.3 }}
+              />
+            </g>
+          );
+        })}
+      </svg>
 
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+Cjxwb2x5Z29uIHBvaW50cz0iMCwwIDIsMCAyLDIgMCwyIiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDMifS8+Cjwvc3ZnPg==')] pointer-events-none" />
+      <motion.div style={{ rotate: rotation / 2 }} className="absolute inset-0">
+        {nodes.map((node, i) => (
+          <div key={node.id || i} style={{ position: "absolute", left: node.x, top: node.y, transform: `translate(-50%, -50%) rotate(${-(rotation / 2)}deg)` }}>
+            <AchievementNode ach={node} index={i} />
+          </div>
+        ))}
+      </motion.div>
 
-      <div className="container mx-auto px-6 relative z-10 max-w-6xl">
+      {/* Central Success Node */}
+      <div 
+        style={{ left: centerX, top: centerY, transform: "translate(-50%, -50%)" }}
+        className="absolute z-50 w-32 h-32 rounded-full bg-zinc-950 border-4 border-purple-500/30 flex flex-col items-center justify-center shadow-[0_0_80px_rgba(168,85,247,0.15)]"
+      >
+        <div className="text-xl font-black text-white uppercase tracking-widest text-center leading-tight">
+          <span className="text-purple-400">Hall</span><br/>of Fame
+        </div>
+        <div className="absolute inset-0 rounded-full border-4 border-purple-500/10 animate-ping" />
+      </div>
+    </div>
+  );
+}
+
+function MobileAchievements({ achievements }) {
+  return (
+    <div className="flex flex-col gap-6 w-full max-w-md mx-auto relative z-10 px-4">
+      {achievements.map((ach, idx) => (
         <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.9 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="mb-24 md:text-center flex flex-col items-center"
+            key={ach.id || idx}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="p-6 rounded-3xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800 shadow-2xl overflow-hidden group"
         >
-          <h2 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-purple-600 mb-6 drop-shadow-2xl text-center">
-            Hall of Fame
-          </h2>
-          <p className="text-zinc-400 text-lg md:text-xl max-w-2xl text-center">
-            Milestones engineered beyond the standard curriculum. A testament to relentless execution and logic.
-          </p>
-          <div className="w-32 h-2 mt-8 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+            <div className="flex items-center gap-4 mb-3">
+                <div className="text-3xl">{ach.icon || "🏆"}</div>
+                <div>
+                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{ach.date}</span>
+                    <h3 className="text-lg font-black text-white uppercase tracking-tight">{ach.title}</h3>
+                </div>
+            </div>
+            <p className="text-zinc-500 text-sm">{ach.desc}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+export default function Achievements() {
+  const [achievementsList, setAchievementsList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        const q = query(collection(db, "achievements"), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (data.length === 0) {
+          setAchievementsList([
+            { title: "IIT Zonals TechFest", desc: "Qualified for the finals in line follower competition.", date: "2024", icon: "🏆" },
+            { title: "Team Challengers", desc: "Core Web Dev contributor handling high-impact logic.", date: "2025", icon: "🎓" },
+            { title: "Open Source", desc: "Actively contributing to diverse projects globally.", date: "Ongoing", icon: "⭐" }
+          ]);
+        } else {
+          setAchievementsList(data);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAchievements();
+  }, []);
+
+  return (
+    <section id="achievements" className="py-32 bg-zinc-950 relative overflow-hidden min-h-screen flex flex-col items-center">
+      <div className="absolute bottom-1/4 left-0 w-[500px] h-[500px] bg-purple-500/5 blur-[150px] rounded-full pointer-events-none" />
+      
+      <div className="container mx-auto px-6 relative z-10 flex flex-col items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-10"
+        >
+          <div className="px-4 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/5 text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-4 mx-auto w-fit">Milestone Tracker</div>
+          <h2 className="text-4xl md:text-7xl font-black text-white mb-6 uppercase tracking-tight">The <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Neural Net</span></h2>
+          <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-pink-600 mx-auto rounded-full" />
         </motion.div>
 
-        <div className="relative w-full">
-
-          <motion.div
-            initial={{ height: 0 }}
-            whileInView={{ height: "100%" }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.5, ease: "easeInOut" }}
-            className="hidden md:block absolute left-1/2 top-0 w-1 bg-gradient-to-b from-cyan-500 via-purple-500 to-transparent -translate-x-1/2 shadow-[0_0_20px_rgba(34,211,238,1)] z-0 rounded-full"
-          />
-
-          <div className="space-y-16 md:space-y-24">
-            {achievements.map((ach, idx) => {
-              const isLeft = idx % 2 === 0;
-              const glowNode = isLeft ? "border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]" : "border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.8)]";
-
-              return (
-                <div key={idx} className={`flex flex-col md:flex-row items-center justify-between w-full ${isLeft ? '' : 'md:flex-row-reverse'}`}>
-
-                  <div className="w-full md:w-5/12 z-10 flex border-l-2 md:border-l-0 border-zinc-800 pl-4 md:pl-0 ml-4 md:ml-0">
-                    <AchievementTiltCard ach={ach} isLeft={isLeft} delay={idx * 0.15} />
-                  </div>
-
-                  <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    whileInView={{ scale: 1, rotate: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15, delay: idx * 0.2 + 0.3 }}
-                    className={`hidden md:flex w-16 h-16 rounded-full bg-zinc-950 border-4 ${glowNode} z-20 items-center justify-center text-3xl`}
-                  >
-                    {ach.icon}
-                  </motion.div>
-
-                  <div className="hidden md:block w-5/12" />
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
+        {loading ? (
+          <div className="py-20 flex justify-center"><div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" /></div>
+        ) : (
+          <>
+            <div className="hidden lg:flex justify-center items-center h-[800px] w-full mt-10">
+              <AchievementWeb achievements={achievementsList} />
+            </div>
+            <div className="lg:hidden w-full mt-12">
+              <MobileAchievements achievements={achievementsList} />
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

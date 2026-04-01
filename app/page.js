@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import Skills from '../components/Skills';
@@ -11,43 +11,24 @@ import { Contact, Footer } from '../components/ContactAndFooter';
 import AdminUploader from '../components/AdminUploader';
 
 export default function Home() {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseXSpring = useSpring(x, { stiffness: 100, damping: 30 });
-  const mouseYSpring = useSpring(y, { stiffness: 100, damping: 30 });
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["2deg", "-2deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-2deg", "2deg"]);
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    x.set(mouseX / width - 0.5);
-    y.set(mouseY / height - 0.5);
-  };
-
   return (
-    <div 
-      className="bg-zinc-950 min-h-screen overflow-hidden relative perspective-[2000px]"
-      onMouseMove={handleMouseMove}
-    >
+    <div className="bg-zinc-950 min-h-screen relative selection:bg-cyan-500/30 selection:text-cyan-200">
+      {/* Chill Background Glows */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-500/5 blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-500/5 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
       <Navbar />
       
-      <motion.main 
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="flex-1 w-full relative z-10 origin-center"
-      >
+      <main className="relative z-10 w-full overflow-x-hidden">
         <Hero />
         <Skills />
         <Projects />
         <Achievements />
         <Certificates />
         <Contact />
-      </motion.main>
+      </main>
       
       <Footer />
       <AdminUploader />
